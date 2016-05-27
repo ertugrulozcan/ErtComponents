@@ -123,14 +123,30 @@
 
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
-                                                                <Border x:Name="RowBorder" 
+                                                                <Border x:Name="CellBorder" 
                                                                         BorderThickness="0,0,0,1" 
                                                                         SnapsToDevicePixels="True"
                                                                         BorderBrush="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=HorizontalGridLinesBrush}" 
                                                                         Loaded="RowBorder_Loaded"
                                                                         PreviewMouseUp="OnCellClicked">
 
-                                                                    <ContentControl Content="{Binding Data}" ContentTemplate="{Binding DataContext.CellTemplate, ElementName=border}"/>
+                                                                    <Border BorderThickness="1.5">
+                                                                        <local:ErtGridViewCell x:Name="cell" Content="{Binding Data}" ContentTemplate="{Binding DataContext.CellTemplate, ElementName=border}"/>
+
+                                                                        <Border.Style>
+                                                                            <Style TargetType="{x:Type Border}">
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding IsSelected, ElementName=cell}" Value="True">
+                                                                                        <Setter Property="Background" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=SelectedRowBackground}"/>
+                                                                                        <Setter Property="BorderBrush" Value="Green"/>
+                                                                                    </DataTrigger>
+                                                                                    <DataTrigger Binding="{Binding IsSelected, ElementName=cell}" Value="False">
+                                                                                        <Setter Property="BorderBrush" Value="{x:Null}"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </Border.Style>
+                                                                    </Border>
 
                                                                     <Border.Style>
                                                                         <Style TargetType="{x:Type Border}">
@@ -184,11 +200,12 @@
 
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Border x:Name="RowBorder" 
-                                                    Height="{Binding Height}"
-                                                    BorderThickness="0,0,0,1" 
-                                                    SnapsToDevicePixels="True"
-                                                    BorderBrush="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=HorizontalGridLinesBrush}">
+                                                <Border x:Name="CellBorder" 
+                                                        Height="{Binding Height}"
+                                                        BorderThickness="0,0,0,1" 
+                                                        SnapsToDevicePixels="True"
+                                                        BorderBrush="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=HorizontalGridLinesBrush}"
+                                                        PreviewMouseUp="OnCellClicked">
 
                                                     <Border.Style>
                                                         <Style TargetType="{x:Type Border}">
