@@ -1,0 +1,262 @@
+﻿<UserControl x:Class="Test.Docking.Components.ErtGridView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Test.Docking.Components"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="600">
+    
+    <Grid x:Name="BaseGrid">
+        <Border x:Name="OutlineBorder" 
+                Background="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=BackgroundColor}" 
+                BorderBrush="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=OutlineBorderBrush}" 
+                BorderThickness="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=OutlineBorderThickness}"
+                CornerRadius="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=OutlineCornerRadius}">
+
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!--HeaderBar-->
+                    <Border Grid.Row="0" 
+                            Height="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=HeaderRowHeight.Value}"
+                            Background="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=HeaderRowBackground}"
+                            Visibility="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=ShowHeadersVisibility}">
+
+                        <ItemsControl ItemsSource="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=Columns}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" IsItemsHost="True"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border x:Name="border" Width="{Binding Width.Value}" BorderBrush="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=HeaderGridLinesBrush}" BorderThickness="0,0,1,0">
+                                        <TextBlock Text="{Binding Title}" 
+                                                   Foreground="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=HeaderRowForeground}"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"/>
+
+                                        <Border.Style>
+                                            <Style TargetType="{x:Type Border}">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=HeaderCellHoverBrush}"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsMouseOver" Value="False">
+                                                        <Setter Property="Background" Value="Transparent"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+
+                    <!--Table-->
+                    <Border Grid.Row="1">
+                        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                            <Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!--Tablo-->
+                                    <ItemsControl x:Name="ColumnsItemsControl" ItemsSource="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=Columns}">
+
+                                        <!--
+                                    <ItemsControl.Resources>
+                                        <CollectionViewSource x:Key="ColumnsCollection" Source="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=Columns}"/>
+                                    </ItemsControl.Resources>
+                                
+                                    <ItemsControl.ItemsSource>
+                                        <CompositeCollection>
+                                            <CollectionContainer Collection="{Binding Source={StaticResource ColumnsCollection}}"/>
+                                            <local:ErtGridViewColumn Width="*">
+                                                <local:ErtGridViewColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <Border/>
+                                                    </DataTemplate>
+                                                </local:ErtGridViewColumn.CellTemplate>
+                                            </local:ErtGridViewColumn>
+                                        </CompositeCollection>
+                                    </ItemsControl.ItemsSource>
+                                
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <DockPanel LastChildFill="True"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    -->
+
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal" IsItemsHost="True"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border x:Name="border" 
+                                                    Width="{Binding Width}" 
+                                                    MinWidth="{Binding Width.Value}" 
+                                                    MaxWidth="{Binding Width.Value}" 
+                                                    BorderBrush="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=VerticalGridLinesBrush}" 
+                                                    BorderThickness="0,0,1,0"
+                                                    SnapsToDevicePixels="True">
+                                                    <ItemsControl x:Name="rowsPresenter" ItemsSource="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=Rows}">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <StackPanel Orientation="Vertical" IsItemsHost="True"/>
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border x:Name="RowBorder" 
+                                                                        BorderThickness="0,0,0,1" 
+                                                                        SnapsToDevicePixels="True"
+                                                                        BorderBrush="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=HorizontalGridLinesBrush}" 
+                                                                        Loaded="RowBorder_Loaded"
+                                                                        PreviewMouseUp="OnCellClicked">
+
+                                                                    <ContentControl Content="{Binding Data}" ContentTemplate="{Binding DataContext.CellTemplate, ElementName=border}"/>
+
+                                                                    <Border.Style>
+                                                                        <Style TargetType="{x:Type Border}">
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding IsAlternate}" Value="False">
+                                                                                    <Setter Property="Background" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=RowBackground}"/>
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding IsAlternate}" Value="True">
+                                                                                    <Setter Property="Background" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=AlternateRowBackground}"/>
+                                                                                </DataTrigger>
+
+                                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                                    <Setter Property="Background" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=CellHoverBrush}"/>
+                                                                                </Trigger>
+
+                                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                                    <Setter Property="Background" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=SelectedRowBackground}"/>
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </Border.Style>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+
+                                                    <Border.Style>
+                                                        <Style TargetType="{x:Type Border}">
+                                                            <Style.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=ColumnHoverBrush}"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsMouseOver" Value="False">
+                                                                    <Setter Property="Background" Value="Transparent"/>
+                                                                </Trigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <!--Sağ doldurma için fake tablo-->
+                                    <ItemsControl ItemsSource="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=Rows}" Grid.Column="1">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Vertical" IsItemsHost="True"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border x:Name="RowBorder" 
+                                                    Height="{Binding Height}"
+                                                    BorderThickness="0,0,0,1" 
+                                                    SnapsToDevicePixels="True"
+                                                    BorderBrush="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=HorizontalGridLinesBrush}">
+
+                                                    <Border.Style>
+                                                        <Style TargetType="{x:Type Border}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsAlternate}" Value="False">
+                                                                    <Setter Property="Background" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=RowBackground}"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsAlternate}" Value="True">
+                                                                    <Setter Property="Background" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=AlternateRowBackground}"/>
+                                                                </DataTrigger>
+
+                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                    <Setter Property="Background" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=SelectedRowBackground}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+
+                                <ListBox ItemsSource="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=Rows}"
+                                         SelectedItem="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=SelectedRow}"
+                                         ScrollViewer.CanContentScroll="False"
+                                         ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                         Background="Transparent"
+                                         BorderBrush="Transparent"
+                                         IsHitTestVisible="False"
+                                         BorderThickness="0"
+                                         Padding="0,-1,0,0">
+
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border/>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                    
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <Border Name="_border" BorderThickness="1.5" Background="Transparent" SnapsToDevicePixels="True" Height="{Binding Height}">
+                                                            <ContentPresenter/>
+                                                        </Border>
+                                                        
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsSelected" Value="True">
+                                                                <Setter TargetName="_border" Property="BorderBrush" Value="Green"/>
+                                                            </Trigger>
+                                                            <Trigger Property="IsSelected" Value="False">
+                                                                <Setter TargetName="_border" Property="BorderBrush" Value="Transparent"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                </ListBox>
+                            </Grid>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</UserControl>
