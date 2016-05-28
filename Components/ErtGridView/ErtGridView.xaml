@@ -138,7 +138,7 @@
                                                                                 <Style.Triggers>
                                                                                     <DataTrigger Binding="{Binding IsSelected, ElementName=cell}" Value="True">
                                                                                         <Setter Property="Background" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=SelectedRowBackground}"/>
-                                                                                        <Setter Property="BorderBrush" Value="Green"/>
+                                                                                        <Setter Property="BorderBrush" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=SelectionUnitBorderBrush}"/>
                                                                                     </DataTrigger>
                                                                                     <DataTrigger Binding="{Binding IsSelected, ElementName=cell}" Value="False">
                                                                                         <Setter Property="BorderBrush" Value="{x:Null}"/>
@@ -229,8 +229,10 @@
                                     </ItemsControl>
                                 </Grid>
 
+                                <!--SelectedRowIndicator-->
                                 <ListBox ItemsSource="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=Rows}"
                                          SelectedItem="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=SelectedRow}"
+                                         Visibility="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=SelectedRowIndicatorVisibility}"
                                          ScrollViewer.CanContentScroll="False"
                                          ScrollViewer.VerticalScrollBarVisibility="Disabled"
                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -257,7 +259,7 @@
                                                         
                                                         <ControlTemplate.Triggers>
                                                             <Trigger Property="IsSelected" Value="True">
-                                                                <Setter TargetName="_border" Property="BorderBrush" Value="Green"/>
+                                                                <Setter TargetName="_border" Property="BorderBrush" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=SelectionUnitBorderBrush}"/>
                                                             </Trigger>
                                                             <Trigger Property="IsSelected" Value="False">
                                                                 <Setter TargetName="_border" Property="BorderBrush" Value="Transparent"/>

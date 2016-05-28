@@ -26,7 +26,13 @@ namespace Test.Docking.Components
 
         public delegate void DataSourceChangeEvent();
         public event DataSourceChangeEvent DataSourceChanged;
-        
+
+        public delegate void SelectedCellChangeEvent(ErtGridViewCell selectedCell);
+        public event SelectedCellChangeEvent SelectedCellChanged;
+
+        public delegate void SelectedRowChangeEvent(ErtGridViewRow selectedRow);
+        public event SelectedRowChangeEvent SelectedRowChanged;
+
         #endregion
 
         #region Properties
@@ -132,8 +138,7 @@ namespace Test.Docking.Components
         // Using a DependencyProperty as the backing store for HeaderRowBackground.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty HeaderRowBackgroundProperty =
             DependencyProperty.Register("HeaderRowBackground", typeof(Brush), typeof(ErtGridView), new PropertyMetadata(new SolidColorBrush(Colors.Transparent)));
-
-
+        
 
         public Brush HeaderCellHoverBrush
         {
@@ -232,7 +237,7 @@ namespace Test.Docking.Components
 
         // Using a DependencyProperty as the backing store for SelectedRow.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty SelectedRowProperty =
-            DependencyProperty.Register("SelectedRow", typeof(ErtGridViewRow), typeof(ErtGridView), new PropertyMetadata(null));
+            DependencyProperty.Register("SelectedRow", typeof(ErtGridViewRow), typeof(ErtGridView), new PropertyMetadata(null, SelectedRowChangeCallback));
 
 
 
@@ -244,7 +249,7 @@ namespace Test.Docking.Components
 
         // Using a DependencyProperty as the backing store for SelectedCell.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty SelectedCellProperty =
-            DependencyProperty.Register("SelectedCell", typeof(ErtGridViewCell), typeof(ErtGridView), new PropertyMetadata(null));
+            DependencyProperty.Register("SelectedCell", typeof(ErtGridViewCell), typeof(ErtGridView), new PropertyMetadata(null, SelectedCellChangeCallback));
 
         
         /// <summary>
@@ -355,7 +360,31 @@ namespace Test.Docking.Components
 
         // Using a DependencyProperty as the backing store for SelectionUnit.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty SelectionUnitProperty =
-            DependencyProperty.Register("SelectionUnit", typeof(SelectionUnits), typeof(ErtGridView), new PropertyMetadata(SelectionUnits.FullRow));
+            DependencyProperty.Register("SelectionUnit", typeof(SelectionUnits), typeof(ErtGridView), new PropertyMetadata(SelectionUnits.FullRow, SelectionUnitChangeCallback));
+
+
+
+        public Brush SelectionUnitBorderBrush
+        {
+            get { return (Brush)GetValue(SelectionUnitBorderBrushProperty); }
+            set { SetValue(SelectionUnitBorderBrushProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for SelectionUnitBorderBrush.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty SelectionUnitBorderBrushProperty =
+            DependencyProperty.Register("SelectionUnitBorderBrush", typeof(Brush), typeof(ErtGridView), new PropertyMetadata(new SolidColorBrush(Colors.Green)));
+
+
+
+        public Visibility SelectedRowIndicatorVisibility
+        {
+            get { return (Visibility)GetValue(SelectedRowIndicatorVisibilityProperty); }
+            set { SetValue(SelectedRowIndicatorVisibilityProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for SelectedRowIndicatorVisibility.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty SelectedRowIndicatorVisibilityProperty =
+            DependencyProperty.Register("SelectedRowIndicatorVisibility", typeof(Visibility), typeof(ErtGridView), new PropertyMetadata(Visibility.Visible));
 
 
 
@@ -369,6 +398,9 @@ namespace Test.Docking.Components
         public ErtGridView()
         {
             this.DataSourceChanged += () => { };
+            this.SelectedCellChanged += (cell) => { };
+            this.SelectedRowChanged += (row) => { };
+
             this.Loaded += ErtGridView_Loaded;
 
             InitializeComponent();
@@ -406,35 +438,35 @@ namespace Test.Docking.Components
         private void OnCellClicked(object sender, MouseButtonEventArgs e)
         {
             Border cellOutlineBorder = sender as Border;
-            
-            if(this.SelectionUnit == SelectionUnits.FullRow)
-            {
-                ErtGridViewRow row = cellOutlineBorder.DataContext as ErtGridViewRow;
+            ErtGridViewRow row = cellOutlineBorder.DataContext as ErtGridViewRow;
 
-                if(row != null)
+            if (row != null)
+            {
+                if (this.SelectionUnit == SelectionUnits.FullRow)
                 {
                     if (this.SelectedRow != null)
                         this.SelectedRow.IsSelected = false;
                     row.IsSelected = true;
-
-                    this.SelectedRow = row;
                 }
-            }
-            else if (this.SelectionUnit == SelectionUnits.SingleCell)
-            {
-                Border cellInlineBorder = cellOutlineBorder.Child as Border;
-                if(cellInlineBorder != null)
-                {
-                    ErtGridViewCell cell = cellInlineBorder.Child as ErtGridViewCell;
 
-                    if (cell != null)
+                this.SelectedRow = row;
+            }
+
+            Border cellInlineBorder = cellOutlineBorder.Child as Border;
+            if (cellInlineBorder != null)
+            {
+                ErtGridViewCell cell = cellInlineBorder.Child as ErtGridViewCell;
+
+                if (cell != null)
+                {
+                    if (this.SelectionUnit == SelectionUnits.SingleCell)
                     {
                         if (this.SelectedCell != null)
                             this.SelectedCell.IsSelected = false;
                         cell.IsSelected = true;
-
-                        this.SelectedCell = cell;
                     }
+
+                    this.SelectedCell = cell;
                 }
             }
         }
@@ -485,7 +517,28 @@ namespace Test.Docking.Components
             var self = d as ErtGridView;
             self.DataSourceChanged();
         }
+        
+        private static void SelectedRowChangeCallback(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var self = d as ErtGridView;
+            self.SelectedRowChanged(self.SelectedRow);
+        }
 
+        private static void SelectedCellChangeCallback(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var self = d as ErtGridView;
+            self.SelectedCellChanged(self.SelectedCell);
+        }
+
+        private static void SelectionUnitChangeCallback(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var self = d as ErtGridView;
+            if (self.SelectionUnit == SelectionUnits.FullRow)
+                self.SelectedRowIndicatorVisibility = Visibility.Visible;
+            else
+                self.SelectedRowIndicatorVisibility = Visibility.Collapsed;
+        }
+        
         #endregion
 
         public enum SelectionUnits
