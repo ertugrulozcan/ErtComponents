@@ -60,6 +60,8 @@ namespace Eigen.Core.Utility
             }
         }
 
+        public bool IsSpellCheckerActive { get; set; }
+
         #endregion
 
         #region Constructors
@@ -69,54 +71,75 @@ namespace Eigen.Core.Utility
         /// </summary>
         public SearchEngine(System.Collections.IEnumerable dataSource)
         {
-            this.DataSource = new HashSet<object>();
-            HashSet<KeyValuePair<string, object>> dictionary = new HashSet<KeyValuePair<string, object>>();
-
-            if (dataSource != null)
-            {
-                foreach (var data in dataSource)
-                {
-                    this.DataSource.Add(data);
-                    dictionary.Add(new KeyValuePair<string, object>(data.ToString().ToUpper(), data));
-                }
-
-                this.SplitWords(dictionary);
-                this.SpellChecker = this.CreateSpellChecker(dictionary.Select(x => x.Key).ToList());
-            }
-            
-            this.Tree = new SearchTree(dictionary);
+            this.Construct(dataSource, null);
         }
 
         /// <summary>
-        /// Constructor2
+        /// Constructor 2
         /// </summary>
         public SearchEngine(System.Collections.IEnumerable dataSource, string memberKey)
+        {
+            this.Construct(dataSource, memberKey);
+        }
+
+        /// <summary>
+        /// Constructor 3
+        /// </summary>
+        public SearchEngine(System.Collections.IEnumerable dataSource, bool isSpellCheckerActive)
+        {
+            this.IsSpellCheckerActive = isSpellCheckerActive;
+            this.Construct(dataSource, null);
+        }
+
+        /// <summary>
+        /// Constructor 4
+        /// </summary>
+        public SearchEngine(System.Collections.IEnumerable dataSource, string memberKey, bool isSpellCheckerActive)
+        {
+            this.IsSpellCheckerActive = isSpellCheckerActive;
+            this.Construct(dataSource, memberKey);
+        }
+
+        private void Construct(System.Collections.IEnumerable dataSource, string memberKey)
         {
             this.DataSource = new HashSet<object>();
             HashSet<KeyValuePair<string, object>> dictionary = new HashSet<KeyValuePair<string, object>>();
 
             if (dataSource != null)
             {
-                foreach (var data in dataSource)
+                if(string.IsNullOrEmpty(memberKey))
                 {
-                    this.DataSource.Add(data);
-
-                    if (!string.IsNullOrEmpty(memberKey))
+                    foreach (var data in dataSource)
                     {
-                        var prop = GetPropValue(data, memberKey);
-                        if (prop != null)
-                            dictionary.Add(new KeyValuePair<string, object>(prop.ToString(), data));
+                        this.DataSource.Add(data);
+                        dictionary.Add(new KeyValuePair<string, object>(data.ToString().ToUpper(), data));
+                    }
+                }
+                else
+                {
+                    foreach (var data in dataSource)
+                    {
+                        this.DataSource.Add(data);
+
+                        if (!string.IsNullOrEmpty(memberKey))
+                        {
+                            var prop = GetPropValue(data, memberKey);
+                            if (prop != null)
+                                dictionary.Add(new KeyValuePair<string, object>(prop.ToString(), data));
+                            else
+                                dictionary.Add(new KeyValuePair<string, object>(data.ToString(), data));
+                        }
                         else
                             dictionary.Add(new KeyValuePair<string, object>(data.ToString(), data));
                     }
-                    else
-                        dictionary.Add(new KeyValuePair<string, object>(data.ToString(), data));
                 }
-
+                
                 this.SplitWords(dictionary);
-                this.SpellChecker = this.CreateSpellChecker(dictionary.Select(x => x.Key).ToList());
+
+                if (this.IsSpellCheckerActive)
+                    this.SpellChecker = this.CreateSpellChecker(dictionary.Select(x => x.Key).ToList());
             }
-            
+
             this.Tree = new SearchTree(dictionary);
         }
 
@@ -137,7 +160,7 @@ namespace Eigen.Core.Utility
 
                 if (node == null)
                 {
-                    if(searchKey.Length > 4)
+                    if(this.IsSpellCheckerActive && searchKey.Length > 4)
                     {
                         bool hasSuggestion = this.DidYouMean(searchKey);
                         if (hasSuggestion)
@@ -218,7 +241,7 @@ namespace Eigen.Core.Utility
 
         private bool DidYouMean(string word)
         {
-            if (!SpellChecker.Spell(word))
+            if (this.SpellChecker != null && !SpellChecker.Spell(word))
             {
                 var suggestions = SpellChecker.Suggest(word);
                 if(suggestions.Count > 0)

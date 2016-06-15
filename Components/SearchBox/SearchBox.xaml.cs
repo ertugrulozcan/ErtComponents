@@ -17,7 +17,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Eigen.Modules.Main.Components
+namespace Eigen.Core.Components
 {
     /// <summary>
     /// Interaction logic for SearchBox.xaml
@@ -123,6 +123,43 @@ namespace Eigen.Modules.Main.Components
         // Using a DependencyProperty as the backing store for StaysOpenResults.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty StaysOpenResultsProperty =
             DependencyProperty.Register("StaysOpenResults", typeof(bool), typeof(SearchBox), new PropertyMetadata(false));
+        
+
+        public bool IsSpellCheckerActive
+        {
+            get { return (bool)GetValue(IsSpellCheckerActiveProperty); }
+            set { SetValue(IsSpellCheckerActiveProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for IsSpellCheckerActive.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty IsSpellCheckerActiveProperty =
+            DependencyProperty.Register("IsSpellCheckerActive", typeof(bool), typeof(SearchBox), new PropertyMetadata(true));
+
+
+
+        public Brush SearchBoxBackground
+        {
+            get { return (Brush)GetValue(SearchBoxBackgroundProperty); }
+            set { SetValue(SearchBoxBackgroundProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for SearchBoxBackground.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty SearchBoxBackgroundProperty =
+            DependencyProperty.Register("SearchBoxBackground", typeof(Brush), typeof(SearchBox), new PropertyMetadata(new SolidColorBrush(Color.FromArgb(255, 39, 39, 39))));
+
+
+
+        public Brush PopupBackgroundBrush
+        {
+            get { return (Brush)GetValue(PopupBackgroundBrushProperty); }
+            set { SetValue(PopupBackgroundBrushProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for PopupBackgroundBrush.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty PopupBackgroundBrushProperty =
+            DependencyProperty.Register("PopupBackgroundBrush", typeof(Brush), typeof(SearchBox), new PropertyMetadata(new SolidColorBrush(Color.FromArgb(255, 51, 51, 51))));
+
+
 
         #endregion
 
@@ -208,9 +245,9 @@ namespace Eigen.Modules.Main.Components
             var self = d as SearchBox;
 
             if (self.SearchKeyPath == null)
-                self.Engine = new SearchEngine(self.DataSource);
+                self.Engine = new SearchEngine(self.DataSource, self.IsSpellCheckerActive);
             else
-                self.Engine = new SearchEngine(self.DataSource, self.SearchKeyPath);
+                self.Engine = new SearchEngine(self.DataSource, self.SearchKeyPath, self.IsSpellCheckerActive);
 
             self.DataSourceChanged();
         }

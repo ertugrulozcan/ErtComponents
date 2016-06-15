@@ -1,12 +1,12 @@
-﻿<UserControl x:Class="Eigen.Modules.Main.Components.SearchBox"
+﻿<UserControl x:Class="Eigen.Core.Components.SearchBox"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:Eigen.Modules.Main.Components"
-             xmlns:converters="clr-namespace:Eigen.Modules.Main.Converter"
+             xmlns:local="clr-namespace:Eigen.Core.Components"
              xmlns:lex="http://wpflocalizeextension.codeplex.com"
              xmlns:fa="http://schemas.fontawesome.io/icons/"
+             xmlns:converters="clr-namespace:Eigen.Core.Components.Converters"
              mc:Ignorable="d" 
              d:DesignHeight="22" d:DesignWidth="300"
              x:Name="BaseLayout">
@@ -54,33 +54,32 @@
         </ControlTemplate>
     </UserControl.Resources>
 
-    <Border BorderBrush="#77444444" BorderThickness="1" Background="#272727" CornerRadius="3">
+    <Border BorderBrush="{Binding BorderBrush, ElementName=BaseLayout}" BorderThickness="1" Background="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=SearchBoxBackground}" CornerRadius="3">
         <Grid>
-            <Grid Margin="2,1" Background="#272727">
+            <Grid Margin="2,1" Background="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=SearchBoxBackground}">
                 <TextBox x:Name="SearchTextBox" 
                          TextChanged="SearchTextBox_TextChanged" 
                          BorderThickness="0" 
                          Background="{x:Null}" 
                          GotFocus="SearchTextBox_GotFocus" 
                          LostFocus="SearchTextBox_LostFocus"
-                         Foreground="WhiteSmoke"  
+                         Foreground="{Binding Foreground, ElementName=BaseLayout}"  
                          FontFamily="{Binding FontFamily, ElementName=BaseLayout}" 
                          FontWeight="{Binding FontWeight, ElementName=BaseLayout}"
-                         CaretBrush="WhiteSmoke"
-                         Margin="0,-2,0,0"/>
+                         CaretBrush="{Binding Foreground, ElementName=BaseLayout}"/>
             </Grid>
 
             <Button x:Name="ClearButton" Template="{StaticResource ClearButtonTemplate}" HorizontalAlignment="Right" VerticalAlignment="Center" Click="ClearButton_Click" Margin="5" Height="10" IsTabStop="False"/>
 
             <Popup x:Name="ResultListPopup" IsOpen="{Binding ItemsSource.Count, Mode=OneWay, ElementName=SearchResultsListBox, Converter={StaticResource ListCountToVisibilityConverter}}" StaysOpen="False">
-                <Border Background="#333333">
+                <Border Background="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=SearchBoxBackground}">
                     <ListBox x:Name="SearchResultsListBox" 
                              MinWidth="200" 
                              MaxHeight="500"
                              ItemsSource="{Binding SearchResults}" 
                              ItemTemplate="{StaticResource ComboBoxItemTemplate}"
                              KeyDown="SearchResultsListBox_KeyDown"
-                             Background="#272727"
+                             Background="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}}, Path=PopupBackgroundBrush}"
                              Foreground="WhiteSmoke">
                     </ListBox>
                 </Border>

@@ -9,7 +9,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Media;
 
-namespace Eigen.Modules.Main.Converter
+namespace Eigen.Core.Components.Converters
 {
     public class SelectedTextColorConverter : IMultiValueConverter
     {
