@@ -140,9 +140,66 @@ namespace Eigen.Core.Utility
             }
         }
 
+        public void AddNewItem(string path, object item)
+        {
+            if (string.IsNullOrEmpty(path) || string.IsNullOrWhiteSpace(path))
+                return;
+
+            char keyChar = path[0];
+            if (!this.Children.Any(x => x.NodeKey == keyChar))
+            {
+                // Düğüm oluştur.
+                if (!this.Objects.Contains(item))
+                    this.Objects.Add(item);
+
+                this.Children.Add(new Node(keyChar, new HashSet<KeyValuePair<string, object>>() { new KeyValuePair<string, object>(path.Substring(1, path.Length - 1), item) }));
+            }
+            else
+            {
+                // Düğüm zaten oluşturulmuş.
+                if (!this.Objects.Contains(item))
+                    this.Objects.Add(item);
+
+                Node child = this.GetChildNode(keyChar, false);
+                child.AddNewItem(path.Substring(1, path.Length - 1), item);
+            }
+        }
+
+        public void RemoveItem(string path, object item)
+        {
+            if (string.IsNullOrEmpty(path) || string.IsNullOrWhiteSpace(path))
+                return;
+
+            char keyChar = path[0];
+            Node child = this.GetChildNode(keyChar, false);
+            if (child != null)
+            {
+                child.RemoveItem(path.Substring(1, path.Length - 1), item);
+
+                if (child.Objects.Count == 0)
+                    this.Children.Remove(child);
+            }
+
+            if (this.Objects.Contains(item))
+                this.Objects.Remove(item);
+        }
+
         public override string ToString()
         {
             return "[" + this.NodeKey + "]";
+        }
+
+        #endregion
+
+        #region Dispose
+
+        public void Destroy()
+        {
+            foreach (var child in this.Children)
+                child.Destroy();
+
+            this.Objects.Clear();
+            this.Children.Clear();
         }
 
         #endregion

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -59,7 +60,44 @@ namespace Eigen.Core.Utility
 
         #region Methods
 
+        internal void AddItems(HashSet<KeyValuePair<string, object>> addedItems)
+        {
+            if (this.Root == null)
+                return;
 
+            foreach (var item in addedItems)
+            {
+                this.AddItem(item);
+            }
+        }
+
+        private void AddItem(KeyValuePair<string, object> item)
+        {
+            this.Root.AddNewItem(item.Key, item.Value);
+        }
+
+        internal void RemoveItems(HashSet<KeyValuePair<string, object>> removedItems)
+        {
+            if (this.Root == null)
+                return;
+
+            foreach (var item in removedItems)
+            {
+                this.RemoveItem(item);
+            }
+        }
+
+        private void RemoveItem(KeyValuePair<string, object> item)
+        {
+            this.Root.RemoveItem(item.Key, item.Value);
+        }
+
+        public void Destroy()
+        {
+            if (this.Root != null)
+                this.Root.Destroy();
+            this.Root = null;
+        }
 
         #endregion
     }

@@ -6,7 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Data;
 
-namespace Eigen.Modules.Main.Converter
+
+namespace Eigen.Infrastructure.Converter
 {
     public class ListCountToVisibilityConverter : IValueConverter
     {

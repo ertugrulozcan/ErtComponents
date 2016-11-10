@@ -16,8 +16,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
-namespace Eigen.Core.Components
+namespace Eigen.Infrastructure.Components
 {
     /// <summary>
     /// Interaction logic for SearchBox.xaml
@@ -30,28 +31,11 @@ namespace Eigen.Core.Components
 
         #region Fields
 
-        private SearchEngine engine;
         private ObservableRangeCollection<KeyValuePair<string, object>> searchResults;
-
-        public delegate void DataSourceChangeEvent();
-        public event DataSourceChangeEvent DataSourceChanged;
 
         #endregion
 
         #region Properties
-
-        public SearchEngine Engine
-        {
-            get
-            {
-                return engine;
-            }
-
-            private set
-            {
-                engine = value;
-            }
-        }
 
         public ObservableRangeCollection<KeyValuePair<string, object>> SearchResults
         {
@@ -70,6 +54,16 @@ namespace Eigen.Core.Components
         #endregion
 
         #region Dependency Properties
+
+        public SearchEngine Engine
+        {
+            get { return (SearchEngine)GetValue(EngineProperty); }
+            set { SetValue(EngineProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for Engine.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty EngineProperty =
+            DependencyProperty.Register("Engine", typeof(SearchEngine), typeof(SearchBox), new PropertyMetadata(null, SearchEngineChangedCallback));
 
         public ICommand SelectionCommand
         {
@@ -94,15 +88,15 @@ namespace Eigen.Core.Components
         /// <summary>
         /// ItemsSource
         /// </summary>
-        public IEnumerable DataSource
+        public IEnumerable<ISearchable> DataSource
         {
-            get { return (IEnumerable)GetValue(DataSourceProperty); }
+            get { return (IEnumerable<ISearchable>)GetValue(DataSourceProperty); }
             set { SetValue(DataSourceProperty, value); }
         }
 
         // Using a DependencyProperty as the backing store for DataSource.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty DataSourceProperty =
-            DependencyProperty.Register("DataSource", typeof(IEnumerable), typeof(SearchBox), new PropertyMetadata(new ObservableCollection<object>(), DataSourceChangedCallback));
+            DependencyProperty.Register("DataSource", typeof(IEnumerable<ISearchable>), typeof(SearchBox), new PropertyMetadata(new ObservableCollection<ISearchable>(), DataSourceChangedCallback));
 
         public string SearchKeyPath
         {
@@ -114,6 +108,16 @@ namespace Eigen.Core.Components
         public static readonly DependencyProperty SearchKeyPathProperty =
             DependencyProperty.Register("SearchKeyPath", typeof(string), typeof(SearchBox), new PropertyMetadata(null));
 
+        public string ResultKeyPath
+        {
+            get { return (string)GetValue(ResultKeyPathProperty); }
+            set { SetValue(ResultKeyPathProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for ResultKeyPath.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty ResultKeyPathProperty =
+            DependencyProperty.Register("ResultKeyPath", typeof(string), typeof(SearchBox), new PropertyMetadata(null));
+
         public bool StaysOpenResults
         {
             get { return (bool)GetValue(StaysOpenResultsProperty); }
@@ -123,7 +127,29 @@ namespace Eigen.Core.Components
         // Using a DependencyProperty as the backing store for StaysOpenResults.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty StaysOpenResultsProperty =
             DependencyProperty.Register("StaysOpenResults", typeof(bool), typeof(SearchBox), new PropertyMetadata(false));
-        
+
+        public bool IsResultsCombined
+        {
+            get { return (bool)GetValue(IsResultsCombinedProperty); }
+            set { SetValue(IsResultsCombinedProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for IsResultsCombined.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty IsResultsCombinedProperty =
+            DependencyProperty.Register("IsResultsCombined", typeof(bool), typeof(SearchBox), new PropertyMetadata(true));
+
+        public SearchEngine.CombineMode CombineMode
+        {
+            get { return (SearchEngine.CombineMode)GetValue(CombineModeProperty); }
+            set { SetValue(CombineModeProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for CombineMode.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty CombineModeProperty =
+            DependencyProperty.Register("CombineMode", typeof(SearchEngine.CombineMode), typeof(SearchBox), new PropertyMetadata(SearchEngine.CombineMode.Intersection));
+
+
+
 
         public bool IsSpellCheckerActive
         {
@@ -161,6 +187,41 @@ namespace Eigen.Core.Components
 
 
 
+        public CornerRadius CornerRadius
+        {
+            get { return (CornerRadius)GetValue(CornerRadiusProperty); }
+            set { SetValue(CornerRadiusProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for CornerRadius.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty CornerRadiusProperty =
+            DependencyProperty.Register("CornerRadius", typeof(CornerRadius), typeof(SearchBox), new PropertyMetadata(new CornerRadius(3)));
+
+
+
+        public string Caption
+        {
+            get { return (string)GetValue(CaptionProperty); }
+            set { SetValue(CaptionProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for Caption.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty CaptionProperty =
+            DependencyProperty.Register("Caption", typeof(string), typeof(SearchBox), new PropertyMetadata("Search"));
+
+
+
+        public bool StaysFocus
+        {
+            get { return (bool)GetValue(StaysFocusProperty); }
+            set { SetValue(StaysFocusProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for StaysFocus.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty StaysFocusProperty =
+            DependencyProperty.Register("StaysFocus", typeof(bool), typeof(SearchBox), new PropertyMetadata(false));
+
+
         #endregion
 
         #region Constructors
@@ -171,37 +232,22 @@ namespace Eigen.Core.Components
         public SearchBox()
         {
             this.DataContext = this;
-            this.DataSourceChanged += () => { };
-            this.Loaded += SearchBox_Loaded;
 
             this.SearchResults = new ObservableRangeCollection<KeyValuePair<string, object>>();
 
             InitializeComponent();
 
-            EventManager.RegisterClassHandler(typeof(FrameworkElement), FrameworkElement.MouseLeftButtonDownEvent, new RoutedEventHandler(this.SearchResultsListBox_MouseLeftButtonDown));
+            //EventManager.RegisterClassHandler((typeof(FrameworkElement), FrameworkElement.MouseLeftButtonDownEvent, new RoutedEventHandler(this.SearchResultsListBox_MouseLeftButtonDown));
 
-            this.SearchTextBox.PreviewGotKeyboardFocus += (s, e) => { this.SearchTextBox.PreviewKeyDown += SearchTextBox_PreviewKeyDown; };
-            this.SearchTextBox.PreviewLostKeyboardFocus += (s, e) => { this.SearchTextBox.PreviewKeyDown -= SearchTextBox_PreviewKeyDown; };
-            this.SearchResultsListBox.PreviewGotKeyboardFocus += (s, e) => { this.SearchResultsListBox.PreviewKeyDown += SearchResultsListBox_PreviewKeyDown; };
-            this.SearchResultsListBox.PreviewLostKeyboardFocus += (s, e) => { this.SearchResultsListBox.PreviewKeyDown -= SearchResultsListBox_PreviewKeyDown; };
+            this.SearchTextBox.PreviewGotKeyboardFocus += SearchTextBox_PreviewGotKeyboardFocus;
+            this.SearchTextBox.PreviewLostKeyboardFocus += SearchTextBox_PreviewLostKeyboardFocus;
+            this.SearchResultsListBox.PreviewGotKeyboardFocus += SearchResultsListBox_PreviewGotKeyboardFocus;
+            this.SearchResultsListBox.PreviewLostKeyboardFocus += SearchResultsListBox_PreviewLostKeyboardFocus;
         }
 
         #endregion
 
         #region Methods
-
-        /// <summary>
-        /// DataSource güncellediğinde yapılacak extra işlemler;
-        /// </summary>
-        private void SearchBox_DataSourceChanged()
-        {
-
-        }
-
-        private void SearchBox_Loaded(object sender, RoutedEventArgs e)
-        {
-            this.DataSourceChanged += SearchBox_DataSourceChanged;
-        }
 
         private void Search(string text)
         {
@@ -213,7 +259,7 @@ namespace Eigen.Core.Components
 
             if (text.Length > 0)
             {
-                results = this.Engine.Search(text);
+                results = this.Engine.Search(text, this.IsResultsCombined, this.CombineMode);
             }
             else
             {
@@ -224,7 +270,36 @@ namespace Eigen.Core.Components
             }
 
             foreach (var obj in results)
-                resultDictionary.Add(new KeyValuePair<string, object>(obj.ToString(), obj));
+            {
+                if (!string.IsNullOrEmpty(this.ResultKeyPath))
+                {
+                    var prop = SearchEngine.GetPropValue(obj, this.ResultKeyPath);
+                    if (prop != null)
+                    {
+                        resultDictionary.Add(new KeyValuePair<string, object>(prop.ToString(), obj));
+                    }
+                    else
+                    {
+                        resultDictionary.Add(new KeyValuePair<string, object>(obj.ToString(), obj));
+                    }
+                }
+                else if (string.IsNullOrEmpty(this.ResultKeyPath) && !string.IsNullOrEmpty(this.SearchKeyPath))
+                {
+                    var prop = SearchEngine.GetPropValue(obj, this.SearchKeyPath);
+                    if (prop != null)
+                    {
+                        resultDictionary.Add(new KeyValuePair<string, object>(prop.ToString(), obj));
+                    }
+                    else
+                    {
+                        resultDictionary.Add(new KeyValuePair<string, object>(obj.ToString(), obj));
+                    }
+                }
+                else
+                {
+                    resultDictionary.Add(new KeyValuePair<string, object>(obj.ToString(), obj));
+                }
+            }
 
             this.SearchResults = resultDictionary;
 
@@ -233,27 +308,117 @@ namespace Eigen.Core.Components
 
         private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
+            this.SetCaptionVisibility();
             this.Search(this.SearchTextBox.Text);
+        }
+
+        public void ForceFocus()
+        {
+            this.SearchTextBox.Focus();
+            Keyboard.Focus(this.SearchTextBox);
+        }
+
+        public void SelectItem(KeyValuePair<string, object> selectedResult)
+        {
+            if (selectedResult.Value is SearchEngine.SpellFix)
+            {
+                var spellfix = (selectedResult.Value as SearchEngine.SpellFix);
+                if (spellfix.SuggestionList.Count > 0)
+                    this.SearchTextBox.Text = spellfix.SuggestionList.First();
+
+                this.RaisePropertyChanged("Text");
+                Keyboard.Focus(this.SearchTextBox);
+                this.SearchTextBox.CaretIndex = this.SearchTextBox.Text.Length;
+                return;
+            }
+
+            if (this.SelectionCommand != null && this.SelectionCommand.CanExecute(selectedResult.Value))
+            {
+                this.SelectionCommand.Execute(selectedResult.Value);
+                this.RaisePropertyChanged("Text");
+
+                if (this.StaysFocus)
+                    this.ForceFocus();
+            }
+
+            this.SearchResults.Clear();
+
+            this.SearchTextBox.Text = string.Empty;
+        }
+
+        private void SetCaptionVisibility()
+        {
+            if (this.CaptionTextBlock.IsFocused)
+            {
+                this.CaptionTextBlock.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                if (this.SearchTextBox.Text.Length == 0)
+                    this.CaptionTextBlock.Visibility = Visibility.Visible;
+                else
+                    this.CaptionTextBlock.Visibility = Visibility.Collapsed;
+            }
         }
 
         #endregion
 
         #region Callback Methods
 
+        private static void SearchEngineChangedCallback(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var self = d as SearchBox;
+        }
+
         private static void DataSourceChangedCallback(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var self = d as SearchBox;
 
-            if (self.SearchKeyPath == null)
-                self.Engine = new SearchEngine(self.DataSource, self.IsSpellCheckerActive);
+            if (self.Engine == null)
+            {
+                if (string.IsNullOrEmpty(self.SearchKeyPath))
+                    self.Engine = new SearchEngine(self.DataSource, self.IsSpellCheckerActive);
+                else
+                    self.Engine = new SearchEngine(self.DataSource, self.SearchKeyPath, self.IsSpellCheckerActive);
+            }
             else
-                self.Engine = new SearchEngine(self.DataSource, self.SearchKeyPath, self.IsSpellCheckerActive);
+            {
+                if (string.IsNullOrEmpty(self.SearchKeyPath))
+                    self.Engine.Regenerate(self.DataSource, self.IsSpellCheckerActive);
+                else
+                    self.Engine.Regenerate(self.DataSource, self.SearchKeyPath, self.IsSpellCheckerActive);
+            }
+        }
 
-            self.DataSourceChanged();
+        #endregion
+
+        #region Event Handlers
+
+        private void SearchTextBox_PreviewGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            this.SearchTextBox.PreviewKeyDown += SearchTextBox_PreviewKeyDown;
+        }
+
+        private void SearchResultsListBox_PreviewLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            this.SearchTextBox.PreviewKeyDown -= SearchTextBox_PreviewKeyDown;
+        }
+
+        private void SearchResultsListBox_PreviewGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            this.SearchResultsListBox.PreviewKeyDown += SearchResultsListBox_PreviewKeyDown;
+        }
+
+        private void SearchTextBox_PreviewLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            this.SearchResultsListBox.PreviewKeyDown -= SearchResultsListBox_PreviewKeyDown;
         }
 
         private void SearchResultsListBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
+            if (this.SearchResultsListBox == null)
+                return;
+
             char c;
             char.TryParse(e.Key.ToString(), out c);
 
@@ -262,7 +427,57 @@ namespace Eigen.Core.Components
                 Keyboard.Focus(this.SearchTextBox);
                 this.SearchResultsListBox.SelectedItem = null;
             }
-            else if ((e.Key != Key.Up && e.Key != Key.Down) && (char.IsLetterOrDigit(c) || e.Key == Key.Back))
+            else if (e.Key == Key.Left)
+            {
+                e.Handled = true;
+
+                // 5 geri
+                int i = this.SearchResultsListBox.SelectedIndex;
+                if (i >= 5)
+                    this.SearchResultsListBox.SelectedIndex = i - 5;
+                else
+                    this.SearchResultsListBox.SelectedIndex = 0;
+
+                var element = (this.SearchResultsListBox.ItemContainerGenerator.ContainerFromItem(this.SearchResultsListBox.SelectedItem) as FrameworkElement);
+                if (element != null)
+                {
+                    element.Focus();
+                    this.SearchResultsListBox.ScrollIntoView(this.SearchResultsListBox.SelectedItem);
+                }
+                else
+                {
+                    this.SearchResultsListBox.ScrollIntoView(this.SearchResultsListBox.SelectedItem);
+                    element = (this.SearchResultsListBox.ItemContainerGenerator.ContainerFromItem(this.SearchResultsListBox.SelectedItem) as FrameworkElement);
+                    if (element != null)
+                        element.Focus();
+                }
+            }
+            else if (e.Key == Key.Right)
+            {
+                e.Handled = true;
+
+                // 5 ileri
+                int i = this.SearchResultsListBox.SelectedIndex;
+                if (i + 5 < this.SearchResultsListBox.Items.Count)
+                    this.SearchResultsListBox.SelectedIndex = i + 5;
+                else
+                    this.SearchResultsListBox.SelectedIndex = this.SearchResultsListBox.Items.Count - 1;
+
+                var element = (this.SearchResultsListBox.ItemContainerGenerator.ContainerFromItem(this.SearchResultsListBox.SelectedItem) as FrameworkElement);
+                if (element != null)
+                {
+                    element.Focus();
+                    this.SearchResultsListBox.ScrollIntoView(this.SearchResultsListBox.SelectedItem);
+                }
+                else
+                {
+                    this.SearchResultsListBox.ScrollIntoView(this.SearchResultsListBox.SelectedItem);
+                    element = (this.SearchResultsListBox.ItemContainerGenerator.ContainerFromItem(this.SearchResultsListBox.SelectedItem) as FrameworkElement);
+                    if (element != null)
+                        element.Focus();
+                }
+            }
+            else if ((e.Key != Key.Up && e.Key != Key.Down) && (char.IsLetterOrDigit(c) || char.IsPunctuation(c) || e.Key == Key.Back))
             {
                 Keyboard.Focus(this.SearchTextBox);
                 this.SearchResultsListBox.SelectedItem = null;
@@ -271,7 +486,7 @@ namespace Eigen.Core.Components
 
         private void SearchTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Down && this.SearchResultsListBox.HasItems)
+            if ((e.Key == Key.Down || (e.Key == Key.Right && this.SearchTextBox.CaretIndex == this.SearchTextBox.Text.Length)) && this.SearchResultsListBox.HasItems)
             {
                 e.Handled = true;
                 this.SearchResultsListBox.SelectedIndex = 0;
@@ -282,13 +497,11 @@ namespace Eigen.Core.Components
         private void SearchResultsListBox_MouseLeftButtonDown(object sender, RoutedEventArgs e)
         {
             var dataContext = (sender as FrameworkElement).DataContext;
+
             if (dataContext is KeyValuePair<string, object>)
             {
                 KeyValuePair<string, object> selectedResult = (KeyValuePair<string, object>)dataContext;
-                if (this.SelectionCommand != null && this.SelectionCommand.CanExecute(selectedResult.Value))
-                    this.SelectionCommand.Execute(selectedResult.Value);
-
-                this.SearchResults.Clear();
+                this.SelectItem(selectedResult);
             }
         }
 
@@ -296,28 +509,9 @@ namespace Eigen.Core.Components
         {
             if ((e.Key & Key.Enter) == Key.Enter)
             {
-                ItemSelected();
+                if (this.SearchResultsListBox.SelectedValue != null && this.SearchResultsListBox.SelectedValue is KeyValuePair<string, object>)
+                    SelectItem((KeyValuePair<string, object>)this.SearchResultsListBox.SelectedValue);
             }
-        }
-
-        public void ItemSelected()
-        {
-            if (this.SearchResultsListBox.SelectedValue != null)
-            {
-                KeyValuePair<string, object> selectedResult = (KeyValuePair<string, object>)this.SearchResultsListBox.SelectedValue;
-                if (this.SelectionCommand != null && this.SelectionCommand.CanExecute(selectedResult.Value))
-                {
-                    this.SelectionCommand.Execute(selectedResult.Value);
-
-                    this.RaisePropertyChanged("Text");
-                    /*
-                    if (selectedResult.Value is Infrastructure.Model.SymbolMenuItem)
-                        this.Text = (selectedResult.Value as Infrastructure.Model.SymbolMenuItem).Name;
-                    */
-                }
-            }
-
-            this.SearchResults.Clear();
         }
 
         private void ClearButton_Click(object sender, RoutedEventArgs e)
@@ -329,12 +523,12 @@ namespace Eigen.Core.Components
 
         private void SearchTextBox_GotFocus(object sender, RoutedEventArgs e)
         {
-
+            this.SetCaptionVisibility();
         }
 
         private void SearchTextBox_LostFocus(object sender, RoutedEventArgs e)
         {
-
+            this.SetCaptionVisibility();
         }
 
         #endregion
@@ -347,6 +541,41 @@ namespace Eigen.Core.Components
         {
             if (this.PropertyChanged != null)
                 this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        #endregion
+
+        #region Dispose
+
+        ~SearchBox()
+        {
+            Dispatcher.BeginInvoke((Action)(() =>
+            {
+                this.Dispose();
+            }));
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                this.SearchTextBox.PreviewGotKeyboardFocus -= SearchTextBox_PreviewGotKeyboardFocus;
+                this.SearchTextBox.PreviewLostKeyboardFocus -= SearchTextBox_PreviewLostKeyboardFocus;
+                this.SearchResultsListBox.PreviewGotKeyboardFocus -= SearchResultsListBox_PreviewGotKeyboardFocus;
+                this.SearchResultsListBox.PreviewLostKeyboardFocus -= SearchResultsListBox_PreviewLostKeyboardFocus;
+                this.SearchTextBox.PreviewKeyDown -= SearchTextBox_PreviewKeyDown;
+                this.SearchResultsListBox.PreviewKeyDown -= SearchResultsListBox_PreviewKeyDown;
+
+                /*
+                // SearchService yasadigi surece engine dispose edilmemeli
+                if (this.Engine != null)
+                    this.Engine.Dispose();
+                */
+            }
+            catch (Exception ex)
+            {
+
+            }
         }
 
         #endregion
